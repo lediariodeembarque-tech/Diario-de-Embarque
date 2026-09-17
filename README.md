@@ -2,38 +2,56 @@
 
 Aplicação React/Vite preparada para Cloudflare Pages.
 
-## Desenvolvimento
+## Desenvolvimento local
 
 ```bash
 npm install
 npm run dev
 ```
 
-## Build
+## Validar a build
 
 ```bash
 npm run build
+npm run preview
 ```
 
-A build é gerada em `dist/`.
+A saída da build fica em `dist/`.
 
-## Cloudflare Pages
+## Deploy no Cloudflare Pages pelo painel
 
-Configure o projeto com:
+Configure o projeto conectado ao GitHub com:
 
+- **Root directory:** `/`
+- **Framework preset:** Vite
 - **Build command:** `npm run build`
 - **Build output directory:** `dist`
-- **Root directory:** `/`
 
-O arquivo `public/_redirects` mantém as rotas de uma SPA funcionando.
+O arquivo `public/_redirects` preserva as rotas da SPA e `public/_headers` adiciona cabeçalhos básicos de segurança.
 
-> Este repositório estava inicialmente sem os arquivos do app, contendo apenas metadados e um README mínimo. Foi adicionada uma base React/Vite funcional para que o projeto tenha uma build publicável. A integração de autenticação, dados e telas do projeto original precisa ser adicionada quando os arquivos-fonte originais estiverem disponíveis.
+## Deploy via CLI
 
-## Importante sobre Wrangler
+Faça login uma vez:
 
-Não use `npx wrangler deploy` para publicar este frontend estático. Para Pages via CLI, gere a build e use:
+```bash
+npx wrangler login
+```
+
+Depois publique como Cloudflare Pages:
+
+```bash
+npm run deploy:pages
+```
+
+Ou, de forma equivalente:
 
 ```bash
 npm run build
 npx wrangler pages deploy dist --project-name diario-de-embarque
 ```
+
+**Não use `npx wrangler deploy` para este frontend.** Esse comando publica um Worker; este projeto é um site estático Vite e deve usar `wrangler pages deploy`.
+
+## Sobre o código original Base44
+
+O repositório recebido não contém a exportação completa do aplicativo original: ele contém apenas a base React/Vite e os metadados do projeto. Portanto, a configuração Cloudflare foi aplicada sem substituir a aplicação atual. Para migrar autenticação, entidades, chat e demais telas do Base44, os arquivos-fonte exportados precisam estar presentes neste repositório.
