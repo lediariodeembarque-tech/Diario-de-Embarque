@@ -1,0 +1,25 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "diario-de-embarque",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-09-18",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "observability": {
+    "enabled": true
+  }
+  // After creating D1 and R2, add their bindings here:
+  // ,"d1_databases": [{
+  //   "binding": "DB",
+  //   "database_name": "diario-de-embarque",
+  //   "database_id": "YOUR_D1_DATABASE_ID",
+  //   "migrations_dir": "migrations"
+  // }]
+  // ,"r2_buckets": [{
+  //   "binding": "UPLOADS",
+  //   "bucket_name": "diario-de-embarque-uploads"
+  // }]
+}
