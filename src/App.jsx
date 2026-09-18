@@ -12,8 +12,9 @@ export default function App() {
   useEffect(() => {
     fetch(`${API}/api/entries`)
       .then(async (response) => {
-        if (!response.ok) throw new Error((await response.json()).error || "Não foi possível carregar os registros.");
-        return response.json();
+        const data = await response.json().catch(() => null);
+        if (!response.ok) throw new Error(data?.error || "Não foi possível carregar os registros.");
+        return data;
       })
       .then(setEntries)
       .catch((reason) => setError(reason.message))
@@ -32,8 +33,8 @@ export default function App() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ text }),
       });
-      const created = await response.json();
-      if (!response.ok) throw new Error(created.error || "Não foi possível salvar o registro.");
+      const created = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(created?.error || "Não foi possível salvar o registro.");
       setEntries((current) => [created, ...current]);
       setEntry("");
     } catch (reason) {
@@ -44,8 +45,17 @@ export default function App() {
   }
 
   async function removeEntry(entryId) {
-    const response = await fetch(`${API}/api/entries/${entryId}`, { method: "DELETE" });
-    if (response.ok) setEntries((current) => current.filter((item) => item.id !== entryId));
+    setError("");
+    try {
+      const response = await fetch(`${API}/api/entries/${entryId}`, { method: "DELETE" });
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(data?.error || "Não foi possível excluir o registro.");
+      }
+      setEntries((current) => current.filter((item) => item.id !== entryId));
+    } catch (reason) {
+      setError(reason.message);
+    }
   }
 
   return (
@@ -65,7 +75,9 @@ export default function App() {
             <article className="entry" key={item.id}>
               <time dateTime={item.createdAt}>{new Date(item.createdAt).toLocaleString("pt-BR")}</time>
               <p>{item.text}</p>
-              <button className="delete-button" type="button" onClick={() => removeEntry(item.id}>Excluir</button>
+              <button className="delete-button" type="button" onClick={() => removeEntry(item.id)}>
+                Excluir
+              </button>
             </article>
           ))}
         </div>
