@@ -18,7 +18,11 @@ label { font-weight: 700; }
 textarea { width: 100%; resize: vertical; border: 1px solid #cbd5e1; border-radius: 12px; padding: 12px; font: inherit; }
 button { border: 0; border-radius: 10px; background: #2368d1; color: white; padding: 12px 18px; font: inherit; font-weight: 700; cursor: pointer; }
 button:hover { background: #1b55ab; }
+button:disabled { opacity: .65; cursor: wait; }
 .entries { display: grid; gap: 12px; margin-top: 28px; }
 .entry { border: 1px solid #e5eaf0; border-radius: 12px; padding: 14px 16px; }
 .entry time { color: #667085; font-size: .8rem; }
-.entry p { margin: 8px 0 0; white-space: pre-wrap; }
+.entry p { margin: 8px 0 12px; white-space: pre-wrap; }
+.delete-button { background: transparent; color: #b42318; padding: 0; font-size: .85rem; }
+.delete-button:hover { background: transparent; text-decoration: underline; }
+.error { color: #b42318; background: #fef3f2; border-radius: 8px; padding: 10px 12px; }
