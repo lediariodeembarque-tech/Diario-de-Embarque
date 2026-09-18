@@ -10,12 +10,14 @@ function json(data, status = 200, headers = {}) {
   return new Response(JSON.stringify(data), { status, headers: { ...jsonHeaders, ...headers } });
 }
 
-function withCors(response, request) {
+function withCors(response, request, env) {
   const headers = new Headers(response.headers);
   const origin = request.headers.get("Origin");
-  if (origin && new URL(request.url).origin === origin) {
+  const allowedOrigin = env.ALLOWED_ORIGIN || new URL(request.url).origin;
+  if (origin === allowedOrigin) {
     headers.set("access-control-allow-origin", origin);
     headers.set("access-control-allow-credentials", "true");
+    headers.append("vary", "Origin");
   }
   headers.set("access-control-allow-methods", "GET,POST,DELETE,OPTIONS");
   headers.set("access-control-allow-headers", "content-type");
@@ -49,10 +51,9 @@ async function currentUser(request, env) {
   const token = getSessionToken(request);
   if (!token || !env.DB) return null;
   const sessionId = await digest(token);
-  const result = await env.DB.prepare(
+  return env.DB.prepare(
     "SELECT users.id, users.email FROM sessions JOIN users ON users.id = sessions.user_id WHERE sessions.id = ? AND sessions.expires_at > ?"
   ).bind(sessionId, new Date().toISOString()).first();
-  return result || null;
 }
 
 async function createSession(userId, env) {
@@ -63,31 +64,25 @@ async function createSession(userId, env) {
   return { token, expiresAt };
 }
 
-async function requireUser(request, env) {
-  const user = await currentUser(request, env);
-  return user || null;
-}
-
 async function api(request, env) {
   if (request.method === "OPTIONS") return new Response(null, { status: 204 });
   if (!env.DB) return json({ error: "D1 não configurado. Configure o binding DB no wrangler.jsonc." }, 503);
 
   const url = new URL(request.url);
   const path = url.pathname.replace(/\/$/, "");
-  const body = ["POST"].includes(request.method) ? await request.json().catch(() => null) : null;
+  const contentType = request.headers.get("content-type") || "";
+  const body = request.method === "POST" && contentType.includes("application/json")
+    ? await request.json().catch(() => null)
+    : null;
 
   if (path === "/api/auth/register" && request.method === "POST") {
     const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
     const password = typeof body?.password === "string" ? body.password : "";
-    if (!/^\S+@\S+\.\S+$/.test(email) || password.length < 8 || password.length > 128) {
-      return json({ error: "Informe um e-mail válido e uma senha entre 8 e 128 caracteres." }, 400);
-    }
-    const existing = await env.DB.prepare("SELECT id FROM users WHERE email = ?").bind(email).first();
-    if (existing) return json({ error: "Este e-mail já está cadastrado." }, 409);
+    if (!/^\S+@\S+\.\S+$/.test(email) || password.length < 8 || password.length > 128) return json({ error: "Informe um e-mail válido e uma senha entre 8 e 128 caracteres." }, 400);
+    if (await env.DB.prepare("SELECT id FROM users WHERE email = ?").bind(email).first()) return json({ error: "Este e-mail já está cadastrado." }, 409);
     const passwordData = await hashPassword(password);
     const userId = id();
-    await env.DB.prepare("INSERT INTO users (id, email, password_hash, password_salt, created_at) VALUES (?, ?, ?, ?, ?)")
-      .bind(userId, email, passwordData.hash, passwordData.salt, new Date().toISOString()).run();
+    await env.DB.prepare("INSERT INTO users (id, email, password_hash, password_salt, created_at) VALUES (?, ?, ?, ?, ?)").bind(userId, email, passwordData.hash, passwordData.salt, new Date().toISOString()).run();
     const session = await createSession(userId, env);
     return json({ user: { id: userId, email }, expiresAt: session.expiresAt }, 201, { "set-cookie": cookie(session.token, SESSION_DAYS * 86400) });
   }
@@ -96,9 +91,7 @@ async function api(request, env) {
     const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
     const password = typeof body?.password === "string" ? body.password : "";
     const user = await env.DB.prepare("SELECT id, email, password_hash, password_salt FROM users WHERE email = ?").bind(email).first();
-    if (!user) return json({ error: "E-mail ou senha inválidos." }, 401);
-    const passwordData = await hashPassword(password, base64ToBytes(user.password_salt));
-    if (passwordData.hash !== user.password_hash) return json({ error: "E-mail ou senha inválidos." }, 401);
+    if (!user || (await hashPassword(password, base64ToBytes(user.password_salt))).hash !== user.password_hash) return json({ error: "E-mail ou senha inválidos." }, 401);
     const session = await createSession(user.id, env);
     return json({ user: { id: user.id, email: user.email }, expiresAt: session.expiresAt }, 200, { "set-cookie": cookie(session.token, SESSION_DAYS * 86400) });
   }
@@ -114,7 +107,7 @@ async function api(request, env) {
     return json({ ok: true }, 200, { "set-cookie": cookie("", 0) });
   }
 
-  const user = await requireUser(request, env);
+  const user = await currentUser(request, env);
   if (!user) return json({ error: "Faça login para continuar." }, 401);
 
   if (path === "/api/entries" && request.method === "GET") {
@@ -154,8 +147,8 @@ async function api(request, env) {
 export default {
   async fetch(request, env) {
     if (new URL(request.url).pathname.startsWith("/api/")) {
-      try { return withCors(await api(request, env), request); }
-      catch (error) { console.error(error); return withCors(json({ error: "Erro interno do servidor" }, 500), request); }
+      try { return withCors(await api(request, env), request, env); }
+      catch (error) { console.error(error); return withCors(json({ error: "Erro interno do servidor" }, 500), request, env); }
     }
     return env.ASSETS.fetch(request);
   },
