@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "deploy": "npm run build && wrangler deploy",
+    "deploy:versions": "npm run build && wrangler versions upload",
     "deploy:pages": "npm run build && wrangler pages deploy dist --project-name diario-de-embarque",
     "db:migrate:local": "wrangler d1 migrations apply diario-de-embarque --local",
     "db:migrate:remote": "wrangler d1 migrations apply diario-de-embarque --remote"

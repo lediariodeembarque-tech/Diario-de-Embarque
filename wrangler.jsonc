@@ -10,15 +10,15 @@
   },
   "observability": {
     "enabled": true
-  },
-  "migrations_dir": "migrations"
-  // After creating the resources, uncomment and fill these bindings:
-  // "d1_databases": [{
+  }
+  // After creating D1 and R2, add their bindings here:
+  // ,"d1_databases": [{
   //   "binding": "DB",
   //   "database_name": "diario-de-embarque",
-  //   "database_id": "YOUR_D1_DATABASE_ID"
-  // }],
-  // "r2_buckets": [{
+  //   "database_id": "YOUR_D1_DATABASE_ID",
+  //   "migrations_dir": "migrations"
+  // }]
+  // ,"r2_buckets": [{
   //   "binding": "UPLOADS",
   //   "bucket_name": "diario-de-embarque-uploads"
   // }]
