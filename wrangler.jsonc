@@ -11,15 +11,5 @@
   "observability": {
     "enabled": true
   }
-  // After creating D1 and R2, add their bindings here:
-  // ,"d1_databases": [{
-  //   "binding": "DB",
-  //   "database_name": "diario-de-embarque",
-  //   "database_id": "YOUR_D1_DATABASE_ID",
-  //   "migrations_dir": "migrations"
-  // }]
-  // ,"r2_buckets": [{
-  //   "binding": "UPLOADS",
-  //   "bucket_name": "diario-de-embarque-uploads"
-  // }]
+  // Configure d1_databases and r2_buckets here after creating the resources.
 }
